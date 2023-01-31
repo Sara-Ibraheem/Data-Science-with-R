@@ -1,0 +1,383 @@
+---
+title: "Assessment_02 MAST9420"
+author: "Sara Ibraheem (si281)"
+date: "2022-12-13"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#loading libraries
+library(caret)
+
+```
+
+
+
+
+##                                                  QUESTION: 01
+**PART: 01.**
+
+
+```{r}
+library(imager)
+im <- load.image('/Users/Saraibraheem/OneDrive - University of Kent/MAST9420/Assessment_2/Screenshot (94).png')
+plot(im)
+```
+
+
+
+##                                                  QUESTION: 02
+
+**1. Logistic Regression**
+
+```{r}
+#loading the library MASS
+library(MASS)
+
+#creating dataframe of Boston data
+boston_data_frame <- as.data.frame(Boston)
+
+#finding median of the crim variable in Boston
+med_crim <- median(boston_data_frame$crim)
+
+#storing the values of crime above and below the median in form of "above" and "below" 
+boston_data_frame$a <- as.factor(ifelse(boston_data_frame$crim > med_crim,"Above","Below"))
+#loading boston_data_frame$a
+table(boston_data_frame$a)
+#checking the values assigned to "Above" and  "Below"
+contrasts(boston_data_frame$a)
+
+
+#storing all the other 13 variables(which are explanatory variables) in a new data variable boston_data_1
+boston_data_1 <- boston_data_frame[,2:15]
+names(boston_data_1)[names(boston_data_1)=='as.factor(a)'] <- 'a'
+#now  creating training and test sets
+set.seed(222)
+#taking approximately 75% data for training
+training <- sample(1:nrow(boston_data_1), 385)
+boston_data_training <- boston_data_1[training,]
+boston_data_testing <- boston_data_1[-training,]
+#Now applying logistic  regression using  binomial family as response variable is in 1 0 form and using ligit link function
+#first we consider all the variables
+model_logistic_reg_1 <- train(a~.,data = boston_data_training, method='glm',family=binomial(link = 'logit'))
+#summarizing the output  of above model 
+summary(model_logistic_reg_1)
+
+
+
+
+#Now  doing prediction on training data
+prediction_boston_training <- predict(model_logistic_reg_1,boston_data_training[,-14])
+#creating confusion matrix
+confusionMatrix(prediction_boston_training,boston_data_training$a)
+#calculating training error given by 1 - Accuracy
+training_error <- 1 - 0.9221
+#loading the value  of training error
+training_error*100
+
+#Now doing prediction on testing data
+prediction_boston_testing <- predict(model_logistic_reg_1,boston_data_testing[,-14])
+#creating confusion matrix
+confusionMatrix(prediction_boston_testing,boston_data_testing$a)
+#calculating testing error given by 1 - Accuracy
+testing_error <- 1 - 0.8843
+#loading the value  of testing error
+testing_error*100
+
+```
+
+**Now considering the subset selection method of predictors based on their significance, considering the p-values.As we can see that the p-value of predictors indus,chas,rm,age,tax,black is higher than 0.05, so we remove them from the model.**
+
+```{r}
+#considering only significant predictors
+model_logistic_reg_2 <- train(a~. -indus - chas -rm -age -tax -black,data = boston_data_training, method='glm',family=binomial(link = 'logit'))
+#summarizing the output  of above model 
+summary(model_logistic_reg_2)
+
+#Now  doing prediction on training data
+prediction_boston_training <- predict(model_logistic_reg_2,boston_data_training[,-14])
+#creating confusion matrix
+confusionMatrix(prediction_boston_training,boston_data_training$a)
+#calculating training error given by 1 - Accuracy
+training_error <- 1 - 0.9065
+#loading the value  of training error
+training_error*100
+
+#Now doing prediction on testing data
+prediction_boston_testing <- predict(model_logistic_reg_2,boston_data_testing[,-14])
+#creating confusion matrix
+confusionMatrix(prediction_boston_testing,boston_data_testing$a)
+#calculating testing error given by 1 - Accuracy
+testing_error <- 1 - 0.8595
+#loading the value  of testing error
+testing_error*100
+
+```
+
+**Reduction in test accuracy after using subset of predictors:(1-0.8595 /0.8843)*100 which is equal to 2.8% only.**
+
+**2. Linear Discriminant Analysis**
+
+```{r}
+#Now considering LDA with all predictors
+model_linear_dis_1 <- train(a~.,data = boston_data_training, method='lda')
+#summarizing the output  of above model 
+summary(model_linear_dis_1)
+
+#Now  doing prediction on training data
+prediction_boston_training <- predict(model_linear_dis_1,boston_data_training[,-14])
+#creating confusion matrix
+confusionMatrix(prediction_boston_training,boston_data_training$a)
+#calculating training error given by 1 - Accuracy
+training_error <- 1 - 0.8753
+#loading the value  of training error
+training_error*100
+
+#Now doing prediction on testing data
+prediction_boston_testing <- predict(model_linear_dis_1,boston_data_testing[,-14])
+#creating confusion matrix
+confusionMatrix(prediction_boston_testing,boston_data_testing$a)
+#calculating testing error given by 1 - Accuracy
+testing_error <- 1 - 0.843 
+#loading the value  of testing error
+testing_error*100
+```
+
+```{r}
+#Now considering LDA with only significant predictors same as selected in case of Logistic regression
+model_linear_dis_1 <- train(a~. -indus - chas -rm -age -tax -black,data = boston_data_training, method='lda')
+#summarizing the output  of above model 
+summary(model_linear_dis_1)
+
+#Now  doing prediction on training data
+prediction_boston_training <- predict(model_linear_dis_1,boston_data_training[,-14])
+#creating confusion matrix
+confusionMatrix(prediction_boston_training,boston_data_training$a)
+#calculating training error given by 1 - Accuracy
+training_error <- 1 - 0.8494
+#loading the value  of training error
+training_error*100
+
+#Now doing prediction on testing data
+prediction_boston_testing <- predict(model_linear_dis_1,boston_data_testing[,-14])
+#creating confusion matrix
+confusionMatrix(prediction_boston_testing,boston_data_testing$a)
+#calculating testing error given by 1 - Accuracy
+testing_error <- 1 - 0.843 
+#loading the value  of testing error
+testing_error*100
+
+```
+**Effect of variable reduction on test accuracy after using subset of predictors:(1-0.843 /0.843)*100 which is equal to 0%.**
+
+
+**Comparison of Logistic Regression and LDA:**
+It  can be seen that in case of all the predictor variables the test error of logistic regression model was 11.57% and LDA was 15.7%. And in case of selecting significant variables the test error for logistic regression model was 14.05% and LDA was 15.7%.
+
+
+
+##                                                  QUESTION: 04
+
+
+**PART: a.**
+
+```{r}
+#loading the ISLR library
+library(ISLR)
+#loading data and storing in a variable
+auto_data <- as.data.frame(Auto)
+#taking median of the  gas mileage
+med_mpg <- median(auto_data$mpg)
+#creating binary variable for low or high mpg
+binary_mpg <- ifelse(auto_data$mpg > med_mpg,1,0)
+auto_data$gasmileagelevel <- as.factor(binary_mpg)
+```
+
+
+**PART: 0b.**
+
+```{r}
+#loading library e1071
+library(e1071)
+set.seed(333)
+#Now tuning the hyperparameters of SVM
+svc_1 <- tune(svm,gasmileagelevel ~ . -mpg, data = auto_data, kernel="linear",ranges=list(cost=c(0.01,0.05,0.1,0.5,1,5,10,50)))
+summary(svc_1)
+
+
+```
+
+**Comments: According to the results obtained, the best parameter of cost = 0.5, i.e. it performs best at cost being equal to 0.5 where the crossvalidation error is the lowest and the corresponding dispersion is given by value 0.04544023.**
+
+
+**PART: c**
+
+```{r}
+set.seed(11)
+#Now taking radial basis kernels into consideration
+svc_2 <- tune(svm,gasmileagelevel ~ . -mpg, data = auto_data, kernel="radial",ranges=list(cost=c(0.01,0.05,0.1,0.5,1,5,10,50),gamma=c(0.01,0.05,0.1,0.5,1,5,10,50)))
+summary(svc_2)
+
+```
+
+**Comments: According to the results obtained, the best parameter of cost = 5 and gamma = 0.1, i.e. it performs best at cost being equal to 5 and gamma being equal to 0.1 with lowest crossvalidation error.**
+
+```{r}
+set.seed(55)
+#Now taking radial basis kernels into consideration
+svc_3 <- tune(svm,gasmileagelevel ~ . -mpg, data = auto_data, kernel="polynomial",ranges=list(cost=c(0.01,0.05,0.1,0.5,1,5,10,50,100),degree=c(0,1,2,3,4,5,6,7,8,9)))
+summary(svc_3)
+
+```
+
+**Comments: According to the results obtained, the best parameter of cost = 10 and degree = 1, i.e. it performs best at cost being equal to 10 and gamma being equal to 1 with lowest crossvalidation error.**
+
+
+
+**PART: d**
+
+```{r}
+#using SVM with linear kernel
+svm_linear <- svm(gasmileagelevel ~ ., data = auto_data,kernel="linear",cost=0.5)
+#using SVM with radial kernel
+svm_radial <- svm(gasmileagelevel ~ ., data = auto_data,kernel="radial",cost=5,gamma=0.1)
+#using SVM with polynomial kernel
+svm_polynomial <- svm(gasmileagelevel ~ ., data = auto_data,kernel="radial",cost=10,degree=1)
+#creating svm plots
+plots <- function(svm_plots){
+  for (name in names(auto_data)[!names(auto_data)%in%c("mpg","gasmileagelevel","name")]) {
+    plot(svm_plots,auto_data, as.formula(paste("mpg~",name,sep = "")))
+  }
+}
+##Now plotting svm with the linear kernel##
+plots(svm_linear)
+
+```
+```{r}
+##Now plotting svm with the radial kernel##
+plots(svm_radial)
+```
+
+```{r}
+##Now plotting svm with the polynomial kernel##
+plots(svm_polynomial)
+```
+
+**Comments: According to the plots, the SVM with radial and polynomial kernel is unable to detect areas in the 2-dimensional space in some circumstances (red from yellow). However, it is dividing the zones in 10-dimensional space.**
+
+
+
+
+
+
+##                                                  QUESTION: 05
+
+
+
+```{r}
+#loading library tree
+library(tree)
+set.seed(87)
+
+age <- sample(25:60,40,replace = TRUE)
+myocardial_infarction_rate <- runif(40,0,1)
+diastolicpressure <- sample(75:110,40,replace = TRUE)
+data <- cbind.data.frame(diastolicpressure,age,myocardial_infarction_rate)
+data$high <- factor(ifelse(diastolicpressure<=87,"No","Yes"))
+tree.data <-tree(high~.-diastolicpressure,data)
+summary(tree.data)
+plot(tree.data)
+text(tree.data,pretty = 0)
+```
+
+
+```{r}
+tree.data
+par(xpd = NA)
+plot(NA, NA, type = "n", xlim = c(25,60), ylim = c(0,1), xlab = "age", ylab = "myocardial_infarction_rate")
+# t1: 
+lines(x = c(25,60), y = c(0.918,0.918),col="red")
+text(x = 60, y = 0.88, labels = c("t1"), col = "red")
+# t2:
+lines(x = c(39.5,39.5), y = c(0,0.918),col="red")
+text(x = 40, y = 0.96, labels = c("t2"), col = "red")
+# t3: 
+lines(x = c(25,39.5), y = c(0.619,0.619),col="red")
+text(x = 40.5, y = 0.619, labels = c("t3"), col = "red")
+# t4: 
+lines(x = c(34.5,34.5), y = c(0,0.619),col="red")
+text(x = 34.5, y = 0.7, labels = c("t4"), col = "red")
+# t5: 
+lines(x = c(50.5,50.5), y = c(0,0.918),col="red")
+text(x = 50.5, y = 0.96, labels = c("t5"), col = "red")
+points(x = 34.5, y =0.619,col="red",pch=19)
+points(x = 39.5, y =0.619,col="red",pch=19)
+points(x = 39.5, y =0.918,col="red",pch=19)
+points(x = 50.5, y =0.918,col="red",pch=19)
+points(x = 60, y =0.918,col="red",pch=19)
+text(x = 55, y = 0.98, labels = c("R1=Yes"))
+text(x = 27, y = 0.8, labels = c("R2=Yes"))
+text(x = 37, y = 0.4, labels = c("R3=Yes"))
+text(x = 30, y = 0.4, labels = c("R4=No"))
+text(x = 45, y = 0.3, labels = c("R5=Yes"))
+text(x = 55, y = 0.6, labels = c("R6=Yes"))
+points(x = 35, y =0.8,col="green",pch=1)
+points(x = 30, y =0.3,col="green",pch=1)
+points(x = 40, y =0.7,col="blue",pch=1)
+points(x = 50, y =0.5,col="green",pch=1)
+points(x = 34, y =0.6,col="blue",pch=1)
+points(x = 27, y =0.2,col="green",pch=1)
+points(x = 30, y =0.9,col="blue",pch=1)
+points(x = 40, y =0.6,col="green",pch=1)
+points(x = 50, y =0.5,col="green",pch=1)
+points(x = 46, y =0.7,col="blue",pch=1)
+points(x = 58, y =0.5,col="green",pch=1)
+points(x = 36, y =0.6,col="green",pch=1)
+points(x = 42, y =0.2,col="blue",pch=1)
+points(x = 58, y =0.8,col="green",pch=1)
+points(x = 39, y =0.6,col="blue",pch=1)
+points(x = 29, y =0.7,col="green",pch=1)
+points(x = 54, y =0.9,col="blue",pch=1)
+points(x = 35, y =0.3,col="green",pch=1)
+points(x = 28, y =0.5,col="green",pch=1)
+points(x = 36, y =0.8,col="blue",pch=1)
+points(x = 58, y =0.5,col="blue",pch=1)
+points(x = 54, y =0.2,col="blue",pch=1)
+
+```
+
+
+                                                
+                                                        
+                                                        
+                                      #The End#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,350 @@
+---
+title: "Assessment_01 MAST9420"
+author: "Sara Ibraheem (si281)"
+date: "2022-11-16"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+##                                                  QUESTION: 01
+**PART: 01.**
+
+```{r}
+#reading data
+dataset_1 <- read.table("data1.txt", header = TRUE)
+```
+
+
+
+**PART: 02.**
+
+```{r}
+#applying linear regression
+model_fit1 <- lm(Y ~ X1 + X2, data = dataset_1)
+#summarizing the output of linear regression
+summary(model_fit1) 
+```
+
+
+
+
+
+**PART: 03.**
+*Interpreting the significance of the features in above model*
+
+The p-value is the possibility of finding a value, given the null-hypothesis which (value) is observed to be more extreme,for our test-statistics. If it is less than the level of significance (0.05), the model fits the dataset effectively. As it can be observed from the output summary of the model, that for feature *X1* the p-value is *0.012*, so it turns out to be important for fitting the model. On the contrary, feature *X2* is not significant as its p-value is *0.500*(higher than the given significance level). So, *X2* variable/feature can be removed from the model as it is not that important.
+
+
+
+
+**PART: 04.**
+
+```{r}
+#taking means
+Y_mean <- mean(dataset_1$Y)
+X1_mean <- mean(dataset_1$X1)
+X2_mean <- mean(dataset_1$X2)
+# Y - Ȳ
+y_minus_ybar <- dataset_1$Y - Y_mean  
+# X1 - X̄1 
+x1_minus_x1bar <- dataset_1$X1 - X1_mean
+# X2 - X̄2
+x2_minus_x2bar <- dataset_1$X2 - X2_mean 
+#fitting linear regression model
+model_fit2 <- lm(y_minus_ybar ~ x1_minus_x1bar + x2_minus_x2bar , data = dataset_1)
+#summarizing the output of the model above
+summary(model_fit2)
+
+```
+
+##                                                  QUESTION: 02
+
+
+**Conclusion for the two models**
+When we compare the two models, we can see that everything is the same except for the est and std-err of the intercept values, which are different in the second model. In the model_fit1, the values for the est and Std-err of the intercept were *-1.967* and *1.961*, respectively, whereas for model_2 the values are *-8.275e-17* and *1.732e-01* respectively for the est and std-err of the intercept. For X1 and X2 features/variables, the model forecasts the identical estimates *β1* and *β2*. Feature *X1* is considered to be significant by both the models with the same p-value of *0.012* which is less than *0.05*.
+
+
+
+
+
+
+##                                                  QUESTION: 03
+
+
+**PART: 01.**
+
+```{r}
+#reading data
+murder_dataset <- read.table("MurderRatesData.txt", header = TRUE)
+#fitting linear model
+model_fit3 <- lm(Y ~ X1 + X2 + X3, data = murder_dataset)
+#summarizing the output of the model
+summary(model_fit3)
+```
+
+
+
+
+
+**PART: 02.**
+
+**Interpretation of the F-stat:**
+The F-test can be applied to determine if at least one feature has a statistically significant influence on the dependent variable. As a result, we wish to compare the null hypothesis that all coefficients are zero to the alternative hypothesis that at least one coefficient is not zero. The F-test has the following two hypotheses: 
+
+The null hypothesis suggests, the model with no independent variables fits the data and also the model. 
+
+Alternative hypothesis suggests that, the model explains the dataset well than the intercept-only model. 
+
+Given the null hypothesis, the F-stat will be F-distributed with *(no. of coefficients(given the model) - 1,no. of obs -no. of coefficients(given the model))* 
+degrees of freedom dof, 
+In our case, it is given by; (4-1, 20-4) which is (3,16) degrees of freedom. 
+The likelihood of the observed values can be indicated by the p-value, given the null-hypothesis. 
+In our model, p-value is *3.629e-06* which is very less than 0.05 significance level. So, null hypothesis can be rejected in this case. This demonstrates that at least one feature of the model is important and gives a better fit than the null or intercept-only models. For determining the feature/features which are important for explaining data we must do further analysis.
+
+
+
+
+
+**PART: 03**
+
+```{r}
+#loading library for regsubsets
+library(leaps)
+#applying subset selection
+selected_model <- regsubsets(Y ~ X1 + X2 + X3, data = murder_dataset)
+#storing the model summary in variable for use in the next steps
+selected_model_summary <- summary(selected_model)
+#summarizing the model output
+selected_model_summary
+```
+
+**Comments**
+The *regsubsets* command makes comparison of the finest models with each other, considering the number of features. It compares different best models based on, or instance, with one feature to the best model with two features, and more depending on the number of features given in the data. So, in above case, even though only three models out of total eight possibilities have been contrasted, it is making the comparison of the best models for the given features, and those best models for concerned features were pre-selected by residual sum-of-squares.
+
+**Model Selection using Adjusted R-squared**
+
+```{r}
+par(mfrow = c(1,2))
+#plotting adjusted rsquared with no. of features
+plot(selected_model_summary$adjr2, xlab = "No. of Variables", ylab = "Adjusted R-squared", type = "l")
+#taking the maximum value of adjusted r-squared
+max <- which.max(selected_model_summary$adjr2)
+#making a point to highlight the maximum value
+points(max, selected_model_summary$adjr2[max], col = "orange", cex = 2.5, pch = 20)
+#taking the adjusted r-squared from the model summary
+selected_model_summary$adjr2
+#checking the variables selected in the model based on the adjr2
+plot(selected_model,scale="adjr2")
+```
+
+
+**Interpretation of the above model**
+From the plot above, it can be observed that the model containing all X1, X2, and X3 variables/features, is giving the highest value of Adjusted R-squared of 0.7842525. So, based on Adjusted R-squared it can be concluded that the model with all features fits the data best.
+
+
+**Model Selection using Mallow's Cp**
+
+```{r}
+par(mfrow = c(1,2))
+#plotting mallow's Cp with no. of features
+plot(selected_model_summary$cp, xlab = "No. of Variables", ylab = "Mallow's Cp", type = "l")
+#taking the minimum value of Mallow's Cp
+min_cp <- which.min(selected_model_summary$cp)
+#making a point to highlight the minimum value
+points(min_cp, selected_model_summary$cp[min_cp], col = "orange", cex = 2, pch = 20)
+#taking the mallow's Cp from the model summary
+selected_model_summary$cp
+#checking the variables selected in the model based on the mallow's Cp
+plot(selected_model,scale="Cp")
+```
+
+
+**Interpretation of the above model**
+From the plot above, it can be observed that the model containing only (X2 and X3) variables/features, is giving the lowest value of Mallow's Cp of 3.437646. So, based on Mallow's Cp method it can be concluded that the model consisting of X2 and X3 variables/features fits the data best.
+
+
+**Model Selection using BIC**
+
+```{r}
+par(mfrow = c(1,2))
+#plotting bic with no. of features
+plot(selected_model_summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
+#taking the minimum value of bic
+min_bic <- which.min(selected_model_summary$bic)
+#making a point to highlight the minimum value
+points(min_bic, selected_model_summary$bic[min_bic], col = "orange", cex = 2, pch = 20)
+#taking the bic from the model summary
+selected_model_summary$bic
+#checking the variables selected in the model based on the bic
+plot(selected_model,scale="bic")
+```
+
+
+**Interpretation of the above model**
+From the plot above, it can be observed that the model consisting of only X2 and X3 as variables/features, is giving the lowest value of BIC of *-23.40188*. So, based on BIC method it can be concluded that the model with features X2 and X3 fits the data best.
+
+
+**Comparison of all the methods**
+When we examine all three models, it can be inferred that the adjusted R2 picked the more complex model with all three variables/features, however both the mallow's_Cp and BIC approaches selected the model consisting of only two features, *X2 & X3*, as shown in the plots above.
+
+
+
+
+
+
+
+##                                                  QUESTION: 04
+
+
+
+The purpose of cross-validation is to identify a model that reduces prediction or testing error. The general way to do this is by removing one observation (for instance $y_{i}$) at a time from the dataset and model and giving the $\hat{y_{i}}$ by using the model that does not contain $y_{i}$. 
+By reducing the statistic, the optimal model is thus projected: 
+                       $Cross Validation = \sum_{i = 1}^{n}  (y_{i}-\hat{y_{i}} )^{2}$
+
+For example, in case of ten-folds cross validation, the dataset is arbitrarily divided into ten separate subgroups, each of which contains (about) ten percent of the data. The model is trained on the training data set before being deployed to the test dataset.
+It is more accurate than many other models, but the drawback is that it is more time consuming.
+
+
+
+##                                                  QUESTION: 05
+
+
+
+```{r}
+#making a variable containing column of 1's for intercept
+dummy_variable <- c(1,1,1,1,1,1) 
+#creating X variable according to the question
+X <- c(0,1,2,-1,-2,0)
+#creating Y variable according to the question
+Y <- c(10,20,40,50,60,90)
+#making a design matrix by combining the intercepts and the X variable
+X_design_matrix <- cbind(dummy_variable, X)
+```
+
+
+
+We have a final equation for the ridge regression, given by
+
+*final equation*
+
+$X^{T} Y=(X^{T} X+λI)\beta$
+
+
+
+*Analyzing lambda = 0: applying penalty on the slope only*
+
+```{r}
+lamda_1 <- 0
+#creating identity matrix
+Identity_matrix <- diag(2)
+#solving for parts of final equation
+X1_transpose <- t(X_design_matrix)
+A <- X1_transpose%*%X_design_matrix + lamda_1*Identity_matrix
+B <- X1_transpose%*%Y
+#solving for beta estimates 
+solve(A, B)
+```
+
+
+**Interpretation of the results**
+In the above case where lambda is 0, final equation reduces to ordinary Least Square (OLS) estimates which we can proved by comparing with the estimates given by simple linear regression.
+
+
+```{r}
+#creating dataframe by combining x and y
+data <-data.frame(cbind(Y,X))
+#fitting linear regression model
+model_fit4 <- lm(Y~X, data = data)
+#calling coefficients of the model
+coef(model_fit4)
+```
+
+
+
+*Analyzing for lambda = 60: applying penalty on the slope only*
+
+```{r}
+lamda_2 <- 60
+#putting zero manually in the first column so that intercept is not penalized
+I_matrix <- matrix(c(0,0,0,1), 2,2)
+A <- X1_transpose%*%X_design_matrix + lamda_2*I_matrix
+B <- X1_transpose%*%Y
+#solving for beta estimates
+solve(A, B)
+```
+
+
+**Interpretation of the results**
+As previously explained, a larger value of lambda imposes a penalty on the slope, resulting in a smaller estimate of slope.
+
+
+
+
+*Analyzing for lambda = 0: applying penalty on both intercept and slope*
+
+```{r}
+Identity_matrix <- diag(2)
+A <- X1_transpose%*%X_design_matrix + lamda_1*Identity_matrix
+B <- X1_transpose%*%Y
+#solving for the beta estimates
+solve(A, B)
+```
+
+**Interpretation of the results**
+As at lambda = 0, the penalty terms disappear, and the model reverts to a linear model.
+
+
+
+*For lambda = 60: applying penalty on both intercept and slope*
+
+```{r}
+Identity_matrix <- diag(2)
+A <- X1_transpose%*%X_design_matrix + lamda_2*Identity_matrix
+B <- X1_transpose%*%Y
+#solving for the beta estimates
+solve(A, B)
+```
+
+
+**Interpretation of the results**
+In this case, because the penalty is imposed to both the slope and the intercept, so, the ridge estimator has reduced both.
+
+
+
+
+                                                        
+                                                        
+                                                        
+                                                        
+                                      #The End#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
